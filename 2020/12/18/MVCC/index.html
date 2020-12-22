@@ -1,33 +1,432 @@
-<!doctype html>
-<html lang="zh-Hans">
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<title>MVCC - 马新华の小屋</title>
-<base href="/">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-<link rel="canonical" href="http://maxinhua.cloud/2020/12/18/MVCC/">
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
 
-<meta name="description" content="MVCC究竟是什么  MVCC(全称Multi Version Concurrency Control)，多版本并发控制，多版本：表示了MVCC的实现原理，并发控制：表示MVCC的主要作用就是处理并发的一种机制  简介 MVCC是MySQL数据库的innodb引擎为了控制并发事务过程中，不会相互影响而出现的，为MySQL提供了不同的隔离级别(MySQL隔离级别)；同时，MVCC的存在也让MySQL">
-<meta property="og:type" content="website">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"maxinhua.cloud","root":"/","images":"/images","scheme":"Muse","version":"8.1.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}};
+  </script>
+<meta name="description" content="MVCC究竟是什么 MVCC(全称Multi Version Concurrency Control)，多版本并发控制，多版本：表示了MVCC的实现原理，并发控制：表示MVCC的主要作用就是处理并发的一种机制  简介MVCC是MySQL数据库的innodb引擎为了控制并发事务过程中，不会相互影响而出现的，为MySQL提供了不同的隔离级别(MySQL隔离级别)；同时，MVCC的存在也让MySQL的数">
+<meta property="og:type" content="article">
 <meta property="og:title" content="MVCC">
 <meta property="og:url" content="http://maxinhua.cloud/2020/12/18/MVCC/index.html">
 <meta property="og:site_name" content="马新华の小屋">
-<meta property="og:description" content="MVCC究竟是什么  MVCC(全称Multi Version Concurrency Control)，多版本并发控制，多版本：表示了MVCC的实现原理，并发控制：表示MVCC的主要作用就是处理并发的一种机制  简介 MVCC是MySQL数据库的innodb引擎为了控制并发事务过程中，不会相互影响而出现的，为MySQL提供了不同的隔离级别(MySQL隔离级别)；同时，MVCC的存在也让MySQL">
+<meta property="og:description" content="MVCC究竟是什么 MVCC(全称Multi Version Concurrency Control)，多版本并发控制，多版本：表示了MVCC的实现原理，并发控制：表示MVCC的主要作用就是处理并发的一种机制  简介MVCC是MySQL数据库的innodb引擎为了控制并发事务过程中，不会相互影响而出现的，为MySQL提供了不同的隔离级别(MySQL隔离级别)；同时，MVCC的存在也让MySQL的数">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?s=160">
-<meta property="article:published_time" content="2020-12-18T14:37:32.000Z">
+<meta property="og:image" content="http://maxinhua.cloud/Users/maxinhua/hexo/source/_posts/MVCC/image-20201221160836098.png">
+<meta property="og:image" content="http://maxinhua.cloud/2020/12/18/MVCC/image-20201221161135309.png">
+<meta property="og:image" content="http://maxinhua.cloud/2020/12/18/MVCC/MVCC/image-20201221161647672.png">
+<meta property="article:published_time" content="2020-12-18T06:37:32.000Z">
 <meta property="article:modified_time" content="2020-12-21T10:13:49.249Z">
 <meta property="article:author" content="马新华">
 <meta property="article:tag" content="分布式,数据库">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?s=160">
+<meta name="twitter:image" content="http://maxinhua.cloud/Users/maxinhua/hexo/source/_posts/MVCC/image-20201221160836098.png">
 
 
-<!-- hexo injector head_end start --><link href="//fonts.googleapis.com/css?family=Baloo+Bhaijaan|Inconsolata|Josefin+Sans|Montserrat" rel="stylesheet"><link href="/styles.43478ea7e28ed563c48b.css" rel="stylesheet">
-<script src="/config.d202ae159809483a2288.js"></script>
+<link rel="canonical" href="http://maxinhua.cloud/2020/12/18/MVCC/">
 
-<link rel="stylesheet" href="/theme.9a110498fb03f1829589.css" is="theme">
-<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.3.0"></head>
-<body lang="zh-Hans"><!-- hexo injector body_begin start --><is-a></is-a><!-- hexo injector body_begin end --><!-- hexo injector body_end start --><script src="/runtime.b15aa7186c559b492b7d.js"></script><script src="/polyfills.824ff89b5f3ca4543a31.js"></script><script src="/main.03652fc423a687c817e8.js"></script><!-- hexo injector body_end end --></body>
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>MVCC | 马新华の小屋</title>
+  
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">马新华の小屋</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">积极做事，热爱生活，享受当下，憧憬未来</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <section class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MVCC%E7%A9%B6%E7%AB%9F%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">MVCC究竟是什么</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-number">1.1.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B7%E4%BD%93%E5%86%85%E5%AE%B9"><span class="nav-number">1.2.</span> <span class="nav-text">具体内容</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E6%9C%AA%E6%8F%90%E4%BA%A4"><span class="nav-number">1.2.1.</span> <span class="nav-text">读未提交</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%BB%E5%B7%B2%E6%8F%90%E4%BA%A4"><span class="nav-number">1.2.2.</span> <span class="nav-text">读已提交</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E9%87%8D%E5%A4%8D%E5%BA%A6"><span class="nav-number">1.2.3.</span> <span class="nav-text">可重复度</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.</span> <span class="nav-text">原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#read-view"><span class="nav-number">1.3.1.</span> <span class="nav-text">read view</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Undo-log-Redo-log-Check-point"><span class="nav-number">1.4.</span> <span class="nav-text">Undo log &#x2F; Redo log &#x2F; Check point</span></a></li></ol></li></ol></div>
+        </section>
+        <!--/noindex-->
+
+        <section class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">马新华</p>
+  <div class="site-description" itemprop="description">技术，博客，数据库，分布式，go，大数据，node，mysql，mvcc，paxos，云原生，devops，cicd</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives">
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+
+
+        </section>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://maxinhua.cloud/2020/12/18/MVCC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="马新华">
+      <meta itemprop="description" content="技术，博客，数据库，分布式，go，大数据，node，mysql，mvcc，paxos，云原生，devops，cicd">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="马新华の小屋">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MVCC
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-12-18 14:37:32" itemprop="dateCreated datePublished" datetime="2020-12-18T14:37:32+08:00">2020-12-18</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-12-21 18:13:49" itemprop="dateModified" datetime="2020-12-21T18:13:49+08:00">2020-12-21</time>
+      </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="MVCC究竟是什么"><a href="#MVCC究竟是什么" class="headerlink" title="MVCC究竟是什么"></a>MVCC究竟是什么</h1><blockquote>
+<p>MVCC(全称Multi Version Concurrency Control)，多版本并发控制，多版本：表示了MVCC的实现原理，并发控制：表示MVCC的主要作用就是处理并发的一种机制</p>
+</blockquote>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>MVCC是MySQL数据库的innodb引擎为了控制并发事务过程中，不会相互影响而出现的，为MySQL提供了不同的隔离级别(<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/WIqoR0-l7h9SObIzmGDatQ]">MySQL隔离级别</a>)；同时，MVCC的存在也让MySQL的数据一致性得到了保证。</p>
+<p>MVCC的机制有点类似git，git仓库中会存在很多分支，当从master分支fork出一条新的分支branckA进行开发时，branchA上只能看到fork前master分支最新的commit，但是对于另一条从同一commit fork出来的分支branchB来说，branchA的所有commit，它都是不可见的；相似的，在数据库的可重复读的隔离级别中，可以将数据库中的两个并发事务看做是两个分支，从事务开始的时候，两者看到的数据都是一样的，但是任何一个事务的提交，对于另一个事务是不可见的，也就是说，另一个事务永远读到的数据都是最开始事务开始时的数据。 </p>
+<h2 id="具体内容"><a href="#具体内容" class="headerlink" title="具体内容"></a>具体内容</h2><p>不同的隔离级别，数据的展示方式是不一样的</p>
+<blockquote>
+<h3 id="读未提交"><a href="#读未提交" class="headerlink" title="读未提交"></a>读未提交</h3></blockquote>
+<p>对于读未提交来说，value的初始值是1，两个事务开始之后，事务A修改了value为2，这是事务B读取到的value就是2，也就是说事务A中未提交的修改也会影响到事务B</p>
+<p><img src="/Users/maxinhua/hexo/source/_posts/MVCC/image-20201221160836098.png" alt="image111"> </p>
+<blockquote>
+<h3 id="读已提交"><a href="#读已提交" class="headerlink" title="读已提交"></a>读已提交</h3></blockquote>
+<p>读已提交，也叫不可重复读，在事务A提交之前的数据事务B是不可以看到的；但是之后的数据事务B是可以看到的，这就造成了事务的不可重复读</p>
+<img src="image-20201221161135309.png" alt="img" style="zoom:50%;" />
+
+<blockquote>
+<h3 id="可重复度"><a href="#可重复度" class="headerlink" title="可重复度"></a>可重复度</h3></blockquote>
+<p>可重复读即事务A提交之后的数据事务B也是看不到的</p>
+<img src="MVCC/image-20201221161647672.png" alt="img" style="zoom:50%;" />
+
+
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>对于任意数据库表元素来说，除了我们定义的字段之外，数据库本身还会提供隐藏的三个字段，分别为DB_TRX_ID，DB_ROLL_PT，ROW_ID；其中前两个字段都是为MVCC服务的，而ROW_ID则是当你没有设置主键的情况下系统为你自动分配的主键字段。</p>
+<p>数据库对数据进行更新删除操作时，其实并没有真正的将数据进行删除或者更新，对于删除操作来讲，其实是先复制了一份新的数据，然后将DB_TRX_ID字段设置为当前事务ID，之后将老的数据标记为删除；对于更新操作也是如此；但是这些数据也不会一直保留，通常会隔一段时间对数据做一次整理，删除冗余的数据，因为这些数据本身也没什么用处了。</p>
+<h3 id="read-view"><a href="#read-view" class="headerlink" title="read view"></a>read view</h3><p>每一个事物开始的时候，数据库都会创建一个read view列表，这个列表记录了当前活跃的事务id，在事务读取数据的时候，会将记录中的DB_TRX_ID和read view中的事务id做比较，当DB_TX_ID小于read view表中最小事务ID(up_limit_id)时，是可见的，当DB_TX_ID大于read view表中最大事务ID(low_limit_id)时，是不可见的；如果在read view表中，就是不可见的；当前事务是不会在read view表中的；</p>
+<blockquote>
+<p>read view如何实现不可重复读和可重复度的隔离的？</p>
+</blockquote>
+<ul>
+<li>不可重复读</li>
+</ul>
+<p>不可重复读是在当前事务每次select时都会创建read view表，所以实现了不可重复读</p>
+<ul>
+<li>可重复读</li>
+</ul>
+<p>可重复读则只会在事务开始时创建read view表</p>
+<h2 id="Undo-log-Redo-log-Check-point"><a href="#Undo-log-Redo-log-Check-point" class="headerlink" title="Undo log / Redo log / Check point"></a>Undo log / Redo log / Check point</h2><blockquote>
+<p>Undo log</p>
+</blockquote>
+<p>undo log的主要作用是回滚事务，如果事务失败，将事务的影响消除</p>
+<blockquote>
+<p>Redo log</p>
+</blockquote>
+<p>Redo log主要作用是数据的主从复制，或者数据恢复；redo log不是逻辑日志，而是数据页的变化日志，所以在数据恢复的时候会先通过获取一个数据快照，然后根据该数据快照之后的redo log进行数据恢复。</p>
+<blockquote>
+<p>Check point</p>
+</blockquote>
+<p>check point的作用是，数据恢复时的快照，因为如果按照redo log从头开始恢复就太慢了，而且日志文件也不会小，所一需要不时的创建快照记录，然后恢复数据的时候是从数据快照开始恢复的。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F-%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 分布式,数据库</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/18/test-blog/" rel="prev" title="test-blog">
+                  <i class="fa fa-chevron-left"></i> test-blog
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/12/21/tttt/" rel="next" title="tttt">
+                  tttt <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">马新华</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: 'd4827647370c1e5d0951',
+          clientSecret: '3f027ea4efba895d2a32aba4bfd3f575f230a167',
+          repo: '1053611385.github.io',
+          owner: '1053611385',
+          admin: ['1053611385'],
+          id: location.pathname,
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+  
+
+
+
+
+
+  <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+  <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+   <script type="text/javascript">
+        var gitalk = new Gitalk({
+          clientID: 'd4827647370c1e5d0951',
+          clientSecret: '3f027ea4efba895d2a32aba4bfd3f575f230a167',
+          repo: '1053611385.github.io',
+          owner: '1053611385',
+          admin: ['1053611385'],
+          id: location.pathname,
+          distractionFreeMode: 'true'
+        })
+        gitalk.render('gitalk-container')           
+       </script>
+
+
+</body>
 </html>
