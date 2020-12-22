@@ -292,6 +292,7 @@
 
   <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
   <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+  <script src="https://cdn.bootcss.com/crypto-js/3.1.9-1/crypto-js.js"></script>
    <script type="text/javascript">
         var gitalk = new Gitalk({
           clientID: 'd4827647370c1e5d0951',
@@ -299,7 +300,7 @@
           repo: '1053611385.github.io',
           owner: '1053611385',
           admin: ['1053611385'],
-          id: location.pathname,
+          id: CryptoJS.MD5(location.pathname),
           distractionFreeMode: 'true'
         })
         gitalk.render('gitalk-container')           
